@@ -1,0 +1,253 @@
+
+FUNCTION Main_copy GLOBAL
+    # On ouvre la page web et note le status du code dans PowerAutomateState.txt
+    File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\PowerAutomateState.txt''' TextToWrite: $'''Creating DXDiag''' AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+    CALL Subflow_Web_Page
+    LABEL 'Refresh DXDiag'
+    # Création du fichier DXDiag afin de récupérer des informations sur le GPU et l'écran
+    @@copilotGeneratedAction: 'False'
+Scripting.RunPowershellScript.RunPowershellScriptAndFailOnTimeout Script: $'''cd C:\\testPShell
+#Suppression du fichier DXDiag
+rm -ErrorAction Ignore DXdiag.txt
+
+#Génération d\'un rapport DXDiag afin de récupérer quelques informations sur le système
+dxdiag /whql:on /t C:\\testPShell/DXDiag
+Clear-Host
+$run=1
+while ($run -eq 1) {
+    start-sleep -seconds 0.5
+    Clear-Host
+    $test=$(cat -ErrorAction Ignore .\\DXDiag.txt | Select-String \"System Information\" | foreach { $_ -replace \"`r|`n\",\"\" })
+    if ($test -eq \'System Information\') {
+	        $run=0
+	        Write-Host 1
+        }
+}''' Timeout: 60 ScriptOutput=> PShellDXDiag ScriptError=> ScriptError
+    IF PShellDXDiag = 1 THEN
+        SET DXDiag TO $'''Créé'''
+        # Récupération d'informations statiques (nom composants, stockage...)
+        File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\PowerAutomateState.txt''' TextToWrite: $'''Generating data''' AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+        @@copilotGeneratedAction: 'False'
+Scripting.RunPowershellScript.RunPowershellScriptAndFailOnTimeout Script: $'''#Récupérations d\'informations statiques
+#nom de l\'ordinateur
+$ComputerName=$(Get-ComputerInfo | Select-Object -ExpandProperty \"Csname\")
+
+#OS
+$OS=$(Get-ComputerInfo | Select-Object -ExpandProperty \"OsName\")
+$OS=$OS + \" \" + $(Get-ComputerInfo | Select-Object -ExpandProperty \"OsArchitecture\")
+
+#nom d\'utilisateur connecté
+$User=$(Get-LocalUser | Where-Object { $_.Enabled -eq \"True\" }) 
+
+#nom CPU
+$CPU=$(Get-WmiObject Win32_Processor | Select-Object -ExpandProperty \"Name\") 
+
+#fréquence CPU
+$CPUFrequencyMax=$(Get-WmiObject Win32_Processor | Select-Object -ExpandProperty \"MaxClockSpeed\")
+
+#nombre coeurs/threads
+$CPUCores=$(Get-WmiObject Win32_Processor | Select-Object -ExpandProperty \"NumberOfCores\")
+$CPUThreads=$(Get-WmiObject Win32_Processor | Select-Object -ExpandProperty \"NumberOfLogicalProcessors\")
+
+#nom GPU
+$GPUName=$(Get-CimInstance win32_VideoController | Select-Object -ExpandProperty \"Name\")
+
+#RAM
+$CompteurRAM=0
+$RAM=new-object system.collections.arraylist
+$CapacityTotal=0
+Get-WmiObject CIM_PhysicalMemory | foreach {
+    $DIMM=$_.DeviceLocator
+    $Manufacturer=$_.Manufacturer
+    $SerialNumber=$_.SerialNumber
+    $Capacity=$_.Capacity / [Math]::Pow(2, 30)
+    $Speed=$_.Speed
+    $CapacityTotal+=$Capacity
+
+    [void]$RAM.Add(\"$DIMM : $Manufacturer (SN :$SerialNumber) $Capacity GB à $Speed MHz\")
+    $CompteurRAM+=1
+}
+
+#VRAM GPU
+$VRAM=[math]::Round((cat C:\\testPShell/DXDiag.txt | Select-String \"Dedicated Memory\" | ForEach-Object { $_ -match \'\\d+\' | Out-Null; $Matches[0] })/[Math]::Pow(2, 10),2)
+$VRAMShared=[math]::Round((cat C:\\testPShell/DXDiag.txt | Select-String \"Shared Memory\" | ForEach-Object { $_ -match \'\\d+\' | Out-Null; $Matches[0] })/[Math]::Pow(2, 10),2)
+
+#affichage
+$Screen=$(cat C:\\testPShell/DXDiag.txt | Select-String \"Current Mode\" | ForEach-Object { $_ -match \'(\\d+\\s*x\\s*\\d+)\\s*\\(\\d+\\s*bit\\)\\s*\\(\\d+Hz\\)\' | Out-Null; $Matches[0] })
+
+#version drivers GPU
+$GPUDrivers=$(cat C:\\testPShell/DXDiag.txt | Select-String \"Driver Version\" | ForEach-Object { $_ -match \'([\\d+|\\.]+)\' | Out-Null; $Matches[0] } | Select-Object -First 1)
+
+#sortie
+$Output=$(cat C:\\testPShell/DXDiag.txt | Select-String \"Output Type\" | ForEach-Object { $_ -match \'(HDMI|DISPLAYPORT|VGA|DVI)\' | Out-Null; $Matches[0] })
+    
+    Clear-Host
+    Write-Host \"$ComputerName\"
+    Write-Host \"$User\"
+    Write-Host \"$OS\"
+    Write-Host \"$CPU\"
+     Write-Host \"$CPUCores / $CPUThreads\"
+     Write-Host \"$CPUFrequencyMax MHz\"
+    Write-Host \"$GPUName\"
+    Write-Host \"$VRAM GB (+ $VRAMShared GB Partagé)\"
+    Write-Host \"$GPUDrivers\"
+    Write-Host \"$Screen\"
+    Write-Host \"$Output\"''' Timeout: 60 ScriptOutput=> PshellInfStatic ScriptError=> ScriptError
+        # Ecriture des informations statiques afin de les récuperer avec JavaScript
+        File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\InfStatic.txt''' TextToWrite: PshellInfStatic AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+        SET CompteurDynamique TO 0
+        LOOP WHILE (1) = (1)
+            # Ecriture des informations statiques afin de les récuperer avec JavaScript
+            @@copilotGeneratedAction: 'False'
+Scripting.RunPowershellScript.RunPowershellScriptAndFailOnTimeout Script: $'''Clear-Host
+#Impression des informations
+    #Récupérations d\'informations dynamiques
+    #processeur
+    $CPUUsage=(Get-WmiObject Win32_Processor | Select-Object -ExpandProperty \"LoadPercentage\")
+    
+    #Fréquence CPU
+    $CPUFrequency=$(Get-WmiObject Win32_Processor | Select-Object -ExpandProperty \"CurrentClockSpeed\")
+    
+    #impression informations
+    Write-Host \"$CPUFrequency MHz\"
+    Write-Host \"$CPUUsage%%\"''' Timeout: 60 ScriptOutput=> PshellInfDynamicCPU ScriptError=> ScriptError
+            File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\InfDynamicCPU.txt''' TextToWrite: PshellInfDynamicCPU AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+            @@copilotGeneratedAction: 'False'
+Scripting.RunPowershellScript.RunPowershellScriptAndFailOnTimeout Script: $'''Clear-Host
+
+#RAM
+$CompteurRAM=0
+$RAM=new-object system.collections.arraylist
+$CapacityTotal=0
+Get-WmiObject CIM_PhysicalMemory | foreach {
+    $DIMM=$_.DeviceLocator
+    $Manufacturer=$_.Manufacturer
+    $SerialNumber=$_.SerialNumber
+    $Capacity=$_.Capacity / [Math]::Pow(2, 30)
+    $Speed=$_.Speed
+    $CapacityTotal+=$Capacity
+
+    [void]$RAM.Add(\"$DIMM : $Manufacturer (SN :$SerialNumber) $Capacity GB à $Speed MHz\")
+    $CompteurRAM+=1
+}
+
+
+#Impression des informations
+    #Récupérations d\'informations dynamiques
+    #Ram libre
+    $FreeCapacity=[math]::Round($(Get-WmiObject Win32_OperatingSystem | Select-Object -ExpandProperty \"FreePhysicalMemory\") / [Math]::Pow(2, 20),2)
+
+
+    #impression informations
+    $b=0
+    while ($b -lt $CompteurRAM) {
+        Write-host $RAM[$b]
+        $b+=1
+    }
+    Write-host \"RAM disponible : $FreeCapacity GB / $CapacityTotal GB\"''' Timeout: 60 ScriptOutput=> PshellInfDynamicRAM ScriptError=> ScriptError
+            File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\InfDynamicRAM.txt''' TextToWrite: PshellInfDynamicRAM AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+            @@copilotGeneratedAction: 'False'
+Scripting.RunPowershellScript.RunPowershellScriptAndFailOnTimeout Script: $'''Clear-Host
+
+#VRAM
+    $VRAM=[math]::Round((cat C:\\testPShell/DXDiag.txt | Select-String \"Dedicated Memory\" | ForEach-Object { $_ -match \'\\d+\' | Out-Null; $Matches[0] })/[Math]::Pow(2, 10),2)
+
+#VRAM Utilisée
+    $VRAMUsed=[math]::Round((Get-Counter -counter \"\\GPU Adapter Memory(*)\\Dedicated Usage\" | Select-Object -ExpandProperty \"CounterSamples\" | Select-Object -ExpandProperty \"CookedValue\" -First 1)/[Math]::Pow(2, 30),2)
+    $VRAMPercentage=[math]::Round(($VRAMUsed / $VRAM)*100,2)
+
+    #Utilisation GPU
+    $b=0
+    get-wmiobject Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine | Select-Object -ExpandProperty \"UtilizationPercentage\" | foreach {$b+=$_}
+    if($b -gt 100){
+    	$b=100
+    }
+    $GPUUtilization=$b
+
+
+
+    #impression informations
+    Write-Host $VRAMUsed\" GB (\"$VRAMPercentage\"%%)\"
+    Write-Host $GPUUtilization\" %%\"''' Timeout: 60 ScriptOutput=> PshellInfDynamicGPU ScriptError=> ScriptError
+            File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\InfDynamicGPU.txt''' TextToWrite: PshellInfDynamicGPU AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+            @@copilotGeneratedAction: 'False'
+Scripting.RunPowershellScript.RunPowershellScriptAndFailOnTimeout Script: $'''Clear-Host
+
+#Stockage
+#Lettres
+$b=0
+$DriveLetters=new-object system.collections.arraylist
+cat C:\\testPShell/DXDiag.txt | Select-String -Pattern \'Drive: [A-Z]:\' | foreach {$_ -split (\" \") | foreach {if($b%%8 -eq 7){[void]$DriveLetters.Add($_)}$b+=1}}
+#Noms
+$DriveNames=new-object system.collections.arraylist
+[void]$DriveNames.Add(\"Disque local\")
+$CompteurName=1
+get-wmiobject CIM_StorageVolume | Select-Object -ExpandProperty \"Label\" | ForEach-Object {$_ -match \'([a-z]|[A-Z]|-|_)+\' | Out-Null; $Matches[0]} | foreach {
+    [void]$DriveNames.add($_)
+    $CompteurName+=1
+}
+#Capacités
+$DriveCapacity=new-object system.collections.arraylist
+cat C:\\testPShell/DXDiag.txt | Select-String \"Total Space\"| ForEach-Object { $_ -match \'\\d+[\\.\\d|]+\' | Out-Null; $Matches[0]} | foreach {
+    [void]$DriveCapacity.add($_)
+}
+#Capacités restante
+$DriveCapacityLeft=new-object system.collections.arraylist
+cat C:\\testPShell/DXDiag.txt | Select-String \"Free Space\"| ForEach-Object { $_ -match \'\\d+[\\.\\d|]+\' | Out-Null; $Matches[0]} | foreach {
+    [void]$DriveCapacityLeft.add($_)
+}
+#pourcentage utilisation
+$DriveCapacityPercentage=new-object system.collections.arraylist
+$b=0
+while ($b -lt $CompteurName) {
+    [void]$DriveCapacityPercentage.add([Math]::Round(($DriveCapacityLeft[$b] / $DriveCapacity[$b])*100))
+    $b+=1
+}
+
+
+
+#Impression des informations
+    #impression informations
+    $b=0
+    while ($b -lt $CompteurName) {
+        Write-Host $DriveNames[$b]\" (\"$DriveLetters[$b]\")\"
+        $DriveCapacityPercentage=[Math]::Round(($DriveCapacityLeft[$b] / $DriveCapacity[$b])*100)
+        Write-Host $DriveCapacityLeft[$b]\" / \"$DriveCapacity[$b]\" ($DriveCapacityPercentage%%)\"
+        $b+=1
+    }''' Timeout: 60 ScriptOutput=> PshellInfDynamicStorage ScriptError=> ScriptError
+            File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\InfDynamicStorage.txt''' TextToWrite: PshellInfDynamicStorage AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+            @@copilotGeneratedAction: 'False'
+Scripting.RunPowershellScript.RunPowershellScriptAndFailOnTimeout Script: $''' cd C:\\testPShell\\InfSysPowerAutomate
+ 
+ $b=0
+ cat .\\InfDynamicStorage.txt | foreach {$b+=1}
+Write-Host $b''' Timeout: 10 ScriptOutput=> PowerShellSize ScriptError=> ScriptError2
+            /# Si première itération on affecte la valeur Act et Past à Size
+Sinon on met Past=Act et Act=Size et on vérifie si la taille à changé#/
+            IF CompteurDynamique = 0 THEN
+                SET StoragePast TO PowerShellSize
+                SET StorageAct TO PowerShellSize
+            ELSE
+                SET StoragePast TO StorageAct
+                SET StorageAct TO PowerShellSize
+                # Si la taille à changé alors on recrée le fichier DXDiag et on le signale à la page Web
+                IF StoragePast <> StorageAct THEN
+                    File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\PowerAutomateState.txt''' TextToWrite: $'''Creating DXDiag''' AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+                    SET DXDiag TO $'''Refresh'''
+                    WAIT 0.4
+                    GOTO 'Refresh DXDiag'
+                END
+            END
+            IF CompteurDynamique = 0 THEN
+                # On note le résultat de l'opération à la première itération
+                File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\PowerAutomateState.txt''' TextToWrite: $'''Done''' AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+                Variables.IncreaseVariable Value: CompteurDynamique IncrementValue: 1
+            END
+            WAIT 0.2
+        END
+    ELSE
+        SET DXDiag TO $'''Pas créé'''
+        File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\PowerAutomateState.txt''' TextToWrite: $'''Error''' AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
+    END
+    EXIT Code: 0
+END FUNCTION

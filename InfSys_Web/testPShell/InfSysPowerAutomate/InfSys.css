@@ -1,0 +1,24 @@
+#Main_Header {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 22%;
+    width:fit-content;
+    height: fit-content;
+    visibility: visible;
+}
+tr {
+    text-align: left;
+}
+th {
+    width: 200px;
+    padding-left: 50px;
+    padding-right: 50px;
+    
+}
+#RAM {
+    width: auto;
+}
+.theme {
+    text-align: left;
+    font-weight: bolder;
+}

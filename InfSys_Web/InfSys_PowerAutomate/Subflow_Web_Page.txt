@@ -1,0 +1,13 @@
+
+FUNCTION Subflow_Web_Page GLOBAL
+    # Lancement serveur Node.js
+    @@copilotGeneratedAction: 'False'
+Scripting.RunPowershellScript.RunPowershellScript Script: $'''cd C:\\testPShell\\InfSysPowerAutomate
+
+#Démarrage du serveur Node.js
+Start-Process -FilePath \"C:\\Program Files\\nodejs\\node.exe\" -ArgumentList \".\\Serveur.js\" -WindowStyle Minimized''' ScriptError=> ScriptError
+    # Ouverture du navigateur
+    @@copilotGeneratedAction: 'False'
+Scripting.RunPowershellScript.RunPowershellScript Script: $'''#Démarrage du navigateur
+start-process file:///C:/testPShell/InfSysPowerAutomate/InfSys.html'''
+END FUNCTION
