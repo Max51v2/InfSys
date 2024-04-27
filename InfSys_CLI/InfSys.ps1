@@ -74,13 +74,13 @@ $VRAM=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Dedicated Mem
 $VRAMShared=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Shared Memory" | Select-Object -First 1 | ForEach-Object { $_ -match '\d+' | Out-Null;if ($_ -notmatch "Shared Memory: n/a"){$Matches[0.1]}else{echo 1}})/[Math]::Pow(2, 10),2)
 
 #affichage
-$Screen=$(cat C:\testPShell/DXDiag.txt | Select-String "Current Mode" | ForEach-Object { $_ -match '(\d+\s*x\s*\d+)\s*\(\d+\s*bit\)\s*\(\d+Hz\)' | Out-Null; $Matches[0] })
+$Screen=$(cat C:\testPShell/DXDiag.txt | Select-String "Current Mode" | select-object -first 1 | ForEach-Object { $_ -match '(\d+\s*x\s*\d+)\s*\(\d+\s*bit\)\s*\(\d+Hz\)' | Out-Null; $Matches[0] })
 
 #version drivers GPU
 $GPUDrivers=$(cat C:\testPShell/DXDiag.txt | Select-String "Driver Version" | ForEach-Object { $_ -match '([\d+|\.]+)' | Out-Null; $Matches[0] } | Select-Object -First 1)
 
 #sortie
-$Output=$(cat C:\testPShell/DXDiag.txt | Select-String "Output Type" | ForEach-Object { $_ -match '(HDMI|DISPLAYPORT|VGA|DVI)' | Out-Null; $Matches[0] })
+$Output=$(cat C:\testPShell/DXDiag.txt | Select-String "Output Type" | ForEach-Object { $_ -match '(HDMI|DISPLAYPORT|VGA|DVI|)' | Out-Null; $Matches[0] })
 
 #Stockage
 #Lettres
@@ -174,7 +174,7 @@ while (1 -eq 1) {
     while ($b -lt $CompteurName) {
         Write-Host "Lecteur : "$DriveNames[$b]" ("$DriveLetters[$b]")"
         $DriveCapacityPercentage=[Math]::Round(($DriveCapacityLeft[$b] / $DriveCapacity[$b])*100)
-        Write-Host "Capacité restante : "$DriveCapacityLeft[$b]" / "$DriveCapacity[$b]" ($DriveCapacityPercentage%)"
+        Write-Host "Capacité restante : "$DriveCapacityLeft[$b]"GB / "$DriveCapacity[$b]"GB ($DriveCapacityPercentage%)"
         $b+=1
     }
     start-sleep -seconds 0.05
