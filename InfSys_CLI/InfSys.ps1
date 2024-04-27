@@ -18,7 +18,7 @@ while ($run -eq 1) {
     Write-Host "Création DXDiag..."
     start-sleep -seconds 0.4  
     Clear-Host
-    $test=$(cat -ErrorAction Ignore .\DXDiag.txt | Select-String "System Information" | Out-String -NoNewline)
+    $test=$(cat -ErrorAction Ignore .\DXDiag.txt | Select-String "System Information" | foreach { $_ -replace "`r|`n","" })
     if ($test -eq 'System Information') {
         $run=0
     }
@@ -51,7 +51,7 @@ $CPUCores=$(Get-WmiObject Win32_Processor | Select-Object -ExpandProperty "Numbe
 $CPUThreads=$(Get-WmiObject Win32_Processor | Select-Object -ExpandProperty "NumberOfLogicalProcessors")
 
 #nom GPU
-$GPUName=$(Get-CimInstance win32_VideoController | Select-Object -ExpandProperty "Name")
+$GPUName=$(Get-CimInstance win32_VideoController | Select-Object -ExpandProperty "Name" -First 1)
 
 #RAM
 $CompteurRAM=0
@@ -70,8 +70,8 @@ Get-WmiObject CIM_PhysicalMemory | foreach {
 }
 
 #VRAM GPU
-$VRAM=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Dedicated Memory" | ForEach-Object { $_ -match '\d+' | Out-Null; $Matches[0] })/[Math]::Pow(2, 10),2)
-$VRAMShared=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Shared Memory" | ForEach-Object { $_ -match '\d+' | Out-Null; $Matches[0] })/[Math]::Pow(2, 10),2)
+$VRAM=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Dedicated Memory" | Select-Object -First 1 | ForEach-Object { $_ -match '\d+' | Out-Null;if ($_ -notmatch "Dedicated Memory: n/a"){$Matches[0.1]}else{echo 1}})/[Math]::Pow(2, 10),2)
+$VRAMShared=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Shared Memory" | Select-Object -First 1 | ForEach-Object { $_ -match '\d+' | Out-Null;if ($_ -notmatch "Shared Memory: n/a"){$Matches[0.1]}else{echo 1}})/[Math]::Pow(2, 10),2)
 
 #affichage
 $Screen=$(cat C:\testPShell/DXDiag.txt | Select-String "Current Mode" | ForEach-Object { $_ -match '(\d+\s*x\s*\d+)\s*\(\d+\s*bit\)\s*\(\d+Hz\)' | Out-Null; $Matches[0] })
@@ -127,12 +127,9 @@ while (1 -eq 1) {
     #Ram libre
     $FreeCapacity=[math]::Round($(Get-WmiObject Win32_OperatingSystem | Select-Object -ExpandProperty "FreePhysicalMemory") / [Math]::Pow(2, 20),2)
 
-    #VRAM
-    $VRAM=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Dedicated Memory" | ForEach-Object { $_ -match '\d+' | Out-Null; $Matches[0] })/[Math]::Pow(2, 10),2)
-
     #VRAM Utilisée
     $VRAMUsed=[math]::Round((Get-Counter -counter "\GPU Adapter Memory(*)\Dedicated Usage" | Select-Object -ExpandProperty "CounterSamples" | Select-Object -ExpandProperty "CookedValue" -First 1)/[Math]::Pow(2, 30),2)
-    $VRAMPercentage=[math]::Round(($VRAMUsed / $VRAM)*100,2)
+    $VRAMPercentage=[math]::Round(($VRAMUsed / $VRAM)*100,2) >$null	
 
     #Utilisation GPU
     $b=0
