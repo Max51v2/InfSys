@@ -6,11 +6,14 @@ dataStoragePast=0
 dataStorageAct=0
 let doRefresh=0
 
+//Programme qui récuppère le statut du programme Power Automate
 async function Loading() {
+    //récupprération du statut noté dans "PowerAutomateState.txt"
     const url = 'http://127.0.0.1:3000/PowerAutomateState.txt';
     fetch(url)
         .then(response => response.text('utf-8'))
         .then(data => {
+            //définit le statut du programme afin de lancer les actions nécéssaires
             if (data === "Creating DXDiag") {
                 doAnimationDXDiag = 1
             }
@@ -24,24 +27,26 @@ async function Loading() {
         .catch(error => console.error('Erreur:', error)
     );
     await fetch
+        //Supprime tout le contenu renseigné dans la page (DOM Scripting)
         if(doRefresh === 1){
             //Supression du contenu de la page
             doRefresh=0
             document.getElementById("Second_Header").style.display='block';
             location.reload()
         }
+        //Lance l'animation de chargement en attente de la création du fichier "DXDiag.txt"
         if (doAnimationDXDiag === 1){
             LoadingAnimationDXDiag();
             await Wait(750);
             doAnimationDXDiag = 0
         }
-
+        //Lance l'animation de chargement en attente de la création du fichier "InfStatic.txt"
         if (doAnimationData === 1){
             LoadingAnimationData();
             await Wait(750);
             doAnimationData = 0
         }
-
+        //Relance la fonction Loading tant que le programme Power Automate n'a pas fini de créer le fichier "DXDiag.txt" et "InfStatic.txt"
         if (run === 1) {
             await Wait(100);
             await Loading();
@@ -54,6 +59,7 @@ async function Loading() {
 }
 
 
+//Lance le remplissage des informations statiques et dynamiques
 async function DiplayData() {
     //Récupération des informations statiques
     document.getElementById("Main_Header").innerHTML = "";
@@ -66,6 +72,7 @@ async function DiplayData() {
 
 //Statistiques statiques
 async function DisplayStatic() {
+     //récupprération des informations statiques notées dans "InfStatic.txt"
     const url = 'http://127.0.0.1:3000/InfStatic.txt';
     fetch(url)        
         .then(response => response.text('utf-8'))
@@ -93,6 +100,7 @@ async function DisplayStatic() {
 
 //Statistiques dynamiques
 async function DisplayDynamic() {
+    //Récuppération des informations dynamiques contenues dans "InfDynamicCPU.txt" et création du tableau
         //CPU
         const url = 'http://127.0.0.1:3000/InfDynamicCPU.txt';
         fetch(url)
@@ -151,7 +159,7 @@ async function DisplayDynamic() {
 
         await Wait(100)
 
-        //Actualisation
+    //Remplissage du tableau
     while( 1 === 1){
         //CPU
         const url = 'http://127.0.0.1:3000/InfDynamicCPU.txt';
@@ -263,6 +271,7 @@ async function ArraySize(element){
 }
 
 
+//Renseigne les informations statiques dans la page HTML
 async function FillStatic(inputArray){
     while(compteurStatic < size-1){
 
@@ -283,7 +292,7 @@ async function FillStatic(inputArray){
 
 
 
-//Remplissage stats dynamiques une première fois
+//Crée les champs manquants dans le tableau puis les rensienges (une seule fois)
 //CPU
     async function FillDynamicCPU(inputArray){
     while(CompteurDynamic < size-1){
@@ -446,7 +455,7 @@ async function FillDynamicStorage(inputArray){
 
 
 
-//Remplissage stats dynamiques à l'infini
+//Remplissage des informations dynamiques à l'infini
 //CPU
 async function FillDynamicCPU2(inputArray){
     while(CompteurDynamic < size-1){
@@ -580,7 +589,7 @@ async function Refresh(){
 
 
 //DEMARRAGE
-//on cache le tableau
+//on cache le tableau contenant les informations
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("PC").style.display='none';
     document.getElementById("CPU").style.display='none';
@@ -590,4 +599,5 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("Screen").style.display='none';
     document.getElementById("Second_Header").style.display='none';
 });
+//Lancement de la fonction qui récuppère le statut du programme Power Automate
 Loading();
