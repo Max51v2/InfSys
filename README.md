@@ -3,4 +3,4 @@ Il y a deux versions :
   - CLI (PowerShell)
   - Web (Power Automate + Powershell + HTML/CSS/JavaScript (+ Node.js))
 
-Note : Chaque fichier contient les programmes nécéssaires ainsi qu'un README contenant les instructions d'installation
+Note : Chaque fichier contient les programmes nécéssaires, README contenant les instructions d'installation et une démonstration.
