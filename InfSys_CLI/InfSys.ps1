@@ -80,7 +80,7 @@ $Screen=$(cat C:\testPShell/DXDiag.txt | Select-String "Current Mode" | select-o
 $GPUDrivers=$(cat C:\testPShell/DXDiag.txt | Select-String "Driver Version" | ForEach-Object { $_ -match '([\d+|\.]+)' | Out-Null; $Matches[0] } | Select-Object -First 1)
 
 #sortie
-$Output=$(cat C:\testPShell/DXDiag.txt | Select-String "Output Type" | ForEach-Object { $_ -match '(HDMI|DISPLAYPORT|VGA|DVI|)' | Out-Null; $Matches[0] })
+$Output=$(cat C:\testPShell/DXDiag.txt | Select-String "Output Type" | ForEach-Object { $_ -match '(HDMI|DISPLAYPORT|VGA|DVI)' | Out-Null; $Matches[0] })
 
 #Stockage
 #Lettres
@@ -129,7 +129,7 @@ while (1 -eq 1) {
 
     #VRAM Utilisée
     $VRAMUsed=[math]::Round((Get-Counter -counter "\GPU Adapter Memory(*)\Dedicated Usage" | Select-Object -ExpandProperty "CounterSamples" | Select-Object -ExpandProperty "CookedValue" -First 1)/[Math]::Pow(2, 30),2)
-    $VRAMPercentage=[math]::Round(($VRAMUsed / $VRAM)*100,2) >$null	
+    $VRAMPercentage=[math]::Round(($VRAMUsed / $VRAM)*100,2)	
 
     #Utilisation GPU
     $b=0
