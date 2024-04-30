@@ -70,8 +70,8 @@ Get-WmiObject CIM_PhysicalMemory | foreach {
 }
 
 #VRAM GPU
-$VRAM=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Dedicated Memory" | Select-Object -First 1 | ForEach-Object { $_ -match '\d+' | Out-Null;if ($_ -notmatch "Dedicated Memory: n/a"){$Matches[0.1]}else{echo 1}})/[Math]::Pow(2, 10),2)
-$VRAMShared=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Shared Memory" | Select-Object -First 1 | ForEach-Object { $_ -match '\d+' | Out-Null;if ($_ -notmatch "Shared Memory: n/a"){$Matches[0.1]}else{echo 1}})/[Math]::Pow(2, 10),2)
+$VRAM=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Dedicated Memory" | Select-Object -First 1 | ForEach-Object { $_ -match '\d+' | Out-Null;if ($_ -notmatch "Dedicated Memory: n/a"){$Matches[0]}else{echo 1}})/[Math]::Pow(2, 10),2)
+$VRAMShared=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Shared Memory" | Select-Object -First 1 | ForEach-Object { $_ -match '\d+' | Out-Null;if ($_ -notmatch "Shared Memory: n/a"){$Matches[0]}else{echo 1}})/[Math]::Pow(2, 10),2)
 
 #affichage
 $Screen=$(cat C:\testPShell/DXDiag.txt | Select-String "Current Mode" | select-object -first 1 | ForEach-Object { $_ -match '(\d+\s*x\s*\d+)\s*\(\d+\s*bit\)\s*\(\d+Hz\)' | Out-Null; $Matches[0] })
