@@ -6,5 +6,5 @@ Il y a deux versions :
 Note : Chaque dossier contient les programmes nécéssaires ainsi qu'un fichier texte contenant les instructions d'installation.
 
 Démonstrations :
-- CLI : https://youtu.be/HfB-DNEokho
+- CLI : https://youtu.be/JzqYbxXewCQ
 - Web : https://youtu.be/aQ4LefaxwDI
