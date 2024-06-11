@@ -74,7 +74,7 @@ $VRAM=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Dedicated Mem
 $VRAMShared=[math]::Round((cat C:\testPShell/DXDiag.txt | Select-String "Shared Memory" | Select-Object -First 1 | ForEach-Object { $_ -match '\d+' | Out-Null;if ($_ -notmatch "Shared Memory: n/a"){$Matches[0]}else{echo 1}})/[Math]::Pow(2, 10),2)
 
 #affichage
-$Screen=$(cat C:\testPShell/DXDiag.txt | Select-String "Current Mode" | select-object -first 1 | ForEach-Object { $_ -match '(\d+\s*x\s*\d+)\s*\(\d+\s*bit\)\s*\(\d+Hz\)' | Out-Null; $Matches[0] })
+$Screen=$(cat C:\testPShell/DXDiag.txt | Select-String "Current Mode" | ForEach-Object { $_ -match '(\d+\s*x\s*\d+)\s*\(\d+\s*bit\)\s*\(\d+Hz\)' | Out-Null; $Matches[0] })
 
 #version drivers GPU
 $GPUDrivers=$(cat C:\testPShell/DXDiag.txt | Select-String "Driver Version" | ForEach-Object { $_ -match '([\d+|\.]+)' | Out-Null; $Matches[0] } | Select-Object -First 1)
@@ -166,8 +166,16 @@ while (1 -eq 1) {
     Write-Host "Version drivers : $GPUDrivers"
     Write-Host ""
     Write-Host "------------Ecran------------"
-    Write-Host "Mode vidéo : $Screen"
-    Write-Host "Sortie : $Output"
+    $b=0
+    while( $b -lt $Screen.length ){
+        Write-Host "Ecran n°"($b+1)" : "$Screen[$b] 
+        $b+=1
+    }
+    $b=0
+    while( $b -lt $Output.length ){
+        Write-Host "Sortie écran n°"($b+1)" : "$Output[$b] 
+        $b+=1
+    }
     Write-Host ""
     Write-Host "-----------Stockage----------"
     $b=0
