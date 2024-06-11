@@ -6,6 +6,10 @@
     height: fit-content;
     visibility: visible;
 }
+#Screen th{
+    width: auto;
+    padding-right: 120px;
+}
 tr {
     text-align: left;
 }
