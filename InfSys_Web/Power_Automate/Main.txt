@@ -74,12 +74,30 @@ $VRAMShared=[math]::Round((cat C:\\testPShell/DXDiag.txt | Select-String \"Share
 
 #affichage
 $Screen=$(cat C:\\testPShell/DXDiag.txt | Select-String \"Current Mode\" | ForEach-Object { $_ -match \'(\\d+\\s*x\\s*\\d+)\\s*\\(\\d+\\s*bit\\)\\s*\\(\\d+Hz\\)\' | Out-Null; $Matches[0] })
+$Sceen_final = \"\"
+$b=0
+while( $b -lt $Screen.length ){
+        $Screen_final += \"Ecran n°\"+($b+1)+\" : \"+$Screen[$b]
+        if(($b+1) -lt $Screen.length){
+        	$Screen_final += \" | \"
+        }
+        $b+=1
+}
 
 #version drivers GPU
 $GPUDrivers=$(cat C:\\testPShell/DXDiag.txt | Select-String \"Driver Version\" | ForEach-Object { $_ -match \'([\\d+|\\.]+)\' | Out-Null; $Matches[0] } | Select-Object -First 1)
 
 #sortie
 $Output=$(cat C:\\testPShell/DXDiag.txt | Select-String \"Output Type\" | ForEach-Object { $_ -match \'(HDMI|DISPLAYPORT|VGA|DVI)\' | Out-Null; $Matches[0] })
+$Output_final = \"\"
+$b=0
+while( $b -lt $Output.length ){
+        $Output_final += \"Sortie écran n°\"+($b+1)+\" : \"+$Output[$b] 
+        if(($b+1) -lt $Output.length){
+        	$Output_final += \" | \"
+        }
+        $b+=1
+}
     
     Clear-Host
     Write-Host \"$ComputerName\"
@@ -91,8 +109,8 @@ $Output=$(cat C:\\testPShell/DXDiag.txt | Select-String \"Output Type\" | ForEac
     Write-Host \"$GPUName\"
     Write-Host \"$VRAM GB (+ $VRAMShared GB Partagé)\"
     Write-Host \"$GPUDrivers\"
-    Write-Host \"$Screen\"
-    Write-Host \"$Output\"''' Timeout: 60 ScriptOutput=> PshellInfStatic ScriptError=> ScriptError
+    Write-Host \"$Screen_final\"
+    Write-Host \"$Output_final\"''' Timeout: 60 ScriptOutput=> PshellInfStatic ScriptError=> ScriptError
         # Ecriture des informations statiques afin de les récuperer avec JavaScript
         File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\InfStatic.txt''' TextToWrite: PshellInfStatic AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
         SET CompteurDynamique TO 0
@@ -136,6 +154,7 @@ Get-WmiObject CIM_PhysicalMemory | foreach {
     #Récupérations d\'informations dynamiques
     #Ram libre
     $FreeCapacity=[math]::Round($(Get-WmiObject Win32_OperatingSystem | Select-Object -ExpandProperty \"FreePhysicalMemory\") / [Math]::Pow(2, 20),2)
+    $FreeCapacityPercentage=[math]::Round(($FreeCapacity / $CapacityTotal)*100,2)
 
 
     #impression informations
@@ -144,7 +163,7 @@ Get-WmiObject CIM_PhysicalMemory | foreach {
         Write-host $RAM[$b]
         $b+=1
     }
-    Write-host \"RAM disponible : $FreeCapacity GB / $CapacityTotal GB\"''' Timeout: 60 ScriptOutput=> PshellInfDynamicRAM ScriptError=> ScriptError
+    Write-host \"RAM disponible : $FreeCapacity GB / $CapacityTotal GB ($FreeCapacityPercentage%%)\"''' Timeout: 60 ScriptOutput=> PshellInfDynamicRAM ScriptError=> ScriptError
             File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\InfDynamicRAM.txt''' TextToWrite: PshellInfDynamicRAM AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
             @@copilotGeneratedAction: 'False'
 Scripting.RunPowershellScript.RunPowershellScriptAndFailOnTimeout Script: $'''Clear-Host
@@ -212,7 +231,7 @@ while ($b -lt $CompteurName) {
     while ($b -lt $CompteurName) {
         Write-Host $DriveNames[$b]\" (\"$DriveLetters[$b]\")\"
         $DriveCapacityPercentage=[Math]::Round(($DriveCapacityLeft[$b] / $DriveCapacity[$b])*100)
-        Write-Host $DriveCapacityLeft[$b]\" / \"$DriveCapacity[$b]\" ($DriveCapacityPercentage%%)\"
+        Write-Host $DriveCapacityLeft[$b]\" GB / \"$DriveCapacity[$b]\" GB ($DriveCapacityPercentage%%)\"
         $b+=1
     }''' Timeout: 60 ScriptOutput=> PshellInfDynamicStorage ScriptError=> ScriptError
             File.WriteText File: $'''C:\\testPShell\\InfSysPowerAutomate\\InfDynamicStorage.txt''' TextToWrite: PshellInfDynamicStorage AppendNewLine: False IfFileExists: File.IfFileExists.Overwrite Encoding: File.FileEncoding.UTF8
